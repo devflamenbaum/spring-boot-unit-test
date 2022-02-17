@@ -2,7 +2,6 @@ package com.devflamenbaum.service.impl;
 
 import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.devflamenbaum.exception.ResourceNotFoundException;
@@ -13,8 +12,13 @@ import com.devflamenbaum.service.EmployeeService;
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
 	
-	@Autowired
-	EmployeeRepository employeeRepository;
+	private EmployeeRepository employeeRepository;
+	
+	public EmployeeServiceImpl(EmployeeRepository employeeRepository) {
+		this.employeeRepository = employeeRepository;
+	}
+
+
 
 	@Override
 	public Employee saveEmployee(Employee employee) {
