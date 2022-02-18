@@ -1,5 +1,6 @@
 package com.devflamenbaum.service.impl;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -31,6 +32,13 @@ public class EmployeeServiceImpl implements EmployeeService {
 		
 		
 		return employeeRepository.save(employee);
+	}
+
+
+
+	@Override
+	public List<Employee> getAllEmployees() {
+		return employeeRepository.findAll();
 	}
 
 }

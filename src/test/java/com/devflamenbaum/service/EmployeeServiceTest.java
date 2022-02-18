@@ -1,5 +1,6 @@
 package com.devflamenbaum.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.assertj.core.api.Assertions;
@@ -81,6 +82,31 @@ public class EmployeeServiceTest {
 		// then - verify the input
 		verify(employeeRepository, never()).save(any(Employee.class));
 		
+	}
+	
+	@DisplayName("JUNIT Test for getAllEmployees method")
+	@Test
+	public void givenEmployeesList_whenGetAllEmployees_thenReturnList() {
+		
+		// given - precondition or setup
+		
+		Employee employee1 = Employee.builder()
+				.id(2L)
+				.firstName("Julia")
+				.lastName("Prates")
+				.email("jup@mailnator.com")
+				.build();
+		
+		given(employeeRepository.findAll())
+					.willReturn(List.of(employee, employee1));		
+		
+		// when - action or the behavior that we are going to test
+		
+		List<Employee> employeeList = employeeService.getAllEmployees();
+		
+		// then - verify the input
+		Assertions.assertThat(employeeList).isNotNull();
+		Assertions.assertThat(employeeList.size()).isEqualTo(2);
 	}
 
 }
