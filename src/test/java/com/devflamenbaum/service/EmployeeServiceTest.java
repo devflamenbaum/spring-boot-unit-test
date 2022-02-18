@@ -127,5 +127,43 @@ public class EmployeeServiceTest {
 		Assertions.assertThat(employeeList).isEmpty();;
 		Assertions.assertThat(employeeList.size()).isEqualTo(0);
 	}
+	
+	@DisplayName("JUNIT Test for getEmployeeById")
+	@Test
+	public void givenEmployeeId_whenGetEmployeeById_thenReturnEmployeeObject() {
+		
+		// given - precondition or setup
+		
+		given(employeeRepository.findById(1L))
+					.willReturn(Optional.of(employee));		
+		
+		// when - action or the behavior that we are going to test
+		
+		Employee employeeDB = employeeService.getEmployeeById(1L).get();
+		
+		// then - verify the input
+		Assertions.assertThat(employeeDB).isNotNull();
+		Assertions.assertThat(employeeDB.getId()).isEqualTo(1L);
+	}
+	
+	@DisplayName("JUNIT Test for updateEmployee")
+	@Test
+	public void givenEmployeeObject_whenUpdateEmployee_thenReturnUpdatedEmployee() {
+		
+		// given - precondition or setup
+		
+		given(employeeRepository.save(employee))
+					.willReturn(employee);		
+		
+		employee.setEmail("gflamen@gmail.com");
+		employee.setFirstName("Biel");
+		// when - action or the behavior that we are going to test
+		
+		Employee updatedEmployee = employeeService.updateEmployee(employee);
+		
+		// then - verify the input
+		Assertions.assertThat(updatedEmployee.getEmail()).isEqualTo("gflamen@gmail.com");
+		Assertions.assertThat(updatedEmployee.getFirstName()).isEqualTo("Biel");
+	}
 
 }
