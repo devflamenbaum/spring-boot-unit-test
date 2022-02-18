@@ -1,5 +1,6 @@
 package com.devflamenbaum.service;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -107,6 +108,24 @@ public class EmployeeServiceTest {
 		// then - verify the input
 		Assertions.assertThat(employeeList).isNotNull();
 		Assertions.assertThat(employeeList.size()).isEqualTo(2);
+	}
+	
+	@DisplayName("JUNIT Test for getAllEmployees method (NEGATIVE SCENARIO)")
+	@Test
+	public void givenEmployeesList_whenGetAllEmployees_thenReturnEmptyList() {
+		
+		// given - precondition or setup
+		
+		given(employeeRepository.findAll())
+					.willReturn(Collections.emptyList());		
+		
+		// when - action or the behavior that we are going to test
+		
+		List<Employee> employeeList = employeeService.getAllEmployees();
+		
+		// then - verify the input
+		Assertions.assertThat(employeeList).isEmpty();;
+		Assertions.assertThat(employeeList.size()).isEqualTo(0);
 	}
 
 }
