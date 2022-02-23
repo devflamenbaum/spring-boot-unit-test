@@ -154,4 +154,18 @@ public class EmployeeControllerTest {
 		response.andExpect(status().isNotFound())
 				.andDo(print());
 	}
+	
+	@Test
+	public void givenEmployeeId_whenDeleteEmployee_thenReturn200() throws Exception {
+		// given - precondition or setup
+		long employeeId = 1L;
+		
+		willDoNothing().given(employeeService).deleteEmployee(employeeId);
+		// when - action or the behavior that we are going to test
+		ResultActions response = mockMvc.perform(delete("/api/employees/{id}", employeeId));
+		
+		// then - verify the input
+		
+		response.andExpect(status().isOk());
+	}
 }
