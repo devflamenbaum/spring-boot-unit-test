@@ -1,46 +1,53 @@
-package com.devflamenbaum.controller;
+package com.devflamenbaum.integration;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 
 import com.devflamenbaum.model.Employee;
-import com.devflamenbaum.service.EmployeeService;
+import com.devflamenbaum.repository.EmployeeRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static org.mockito.BDDMockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.hamcrest.CoreMatchers.*;
-import static org.mockito.ArgumentMatchers.any;
-
-@WebMvcTest
-public class EmployeeControllerTest {
-
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
+public class EmployeeControllerITests {
+	
 	@Autowired
 	private MockMvc mockMvc;
-
-	@MockBean
-	private EmployeeService employeeService;
-
+	
+	@Autowired
+	private EmployeeRepository employeeRepository;
+	
 	@Autowired
 	private ObjectMapper objectMapper;
-
+	
+	@BeforeEach
+	public void setup() {
+		employeeRepository.deleteAll();
+	}
+	
 	@Test
 	public void givenEmployeeObject_whenCreateEmployee_thenReturnSavedEmployee() throws Exception {
 
 		Employee employee = Employee.builder().id(1L).firstName("Gabriel").lastName("Flamenbaum")
 				.email("gflamen@mailnator.com").build();
-
-		given(employeeService.saveEmployee(any(Employee.class))).willAnswer((invocation) -> invocation.getArgument(0));
 
 		ResultActions response = mockMvc.perform(post("/api/employees").contentType(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(employee)));
@@ -49,16 +56,16 @@ public class EmployeeControllerTest {
 				.andExpect(jsonPath("$.lastName", is(employee.getLastName())))
 				.andExpect(jsonPath("$.email", is(employee.getEmail()))).andDo(print());
 	}
-
+	
 	@Test
 	public void givenListOfEmployees_whenGetAllEmployees_thenReturnEmployeesList() throws Exception {
 		// given - precondition or setup
 
 		List<Employee> listOfEmployees = new ArrayList<>();
-		listOfEmployees
-				.add(Employee.builder().firstName("Gabriel").lastName("Flamenbaum").email("gflamen@mailnator").build());
+		listOfEmployees.add(Employee.builder().firstName("Gabriel").lastName("Flamenbaum").email("gflamen@mailnator").build());
 		listOfEmployees.add(Employee.builder().firstName("Tony").lastName("Stark").email("tony@mailnator").build());
-		given(employeeService.getAllEmployees()).willReturn(listOfEmployees);
+		
+		employeeRepository.saveAll(listOfEmployees);
 		// when - action or the behavior that we are going to test
 
 		ResultActions response = mockMvc.perform(get("/api/employees"));
@@ -66,20 +73,19 @@ public class EmployeeControllerTest {
 
 		response.andExpect(status().isOk()).andDo(print()).andExpect(jsonPath("$.size()", is(listOfEmployees.size())));
 	}
-
+	
 	@Test
 	public void givenEmployeeId_whenGetEmployeeById_thenReturnEmployeeObject() throws Exception {
 		// given - precondition or setup
-		long employeeId = 1L;
 
 		Employee employee = Employee.builder().firstName("Gabriel").lastName("Flamenbaum")
 				.email("gflamen@mailnator.com").build();
 
-		given(employeeService.getEmployeeById(employeeId)).willReturn(Optional.of(employee));
+		employeeRepository.save(employee);
 
 		// when - action or the behavior that we are going to test
 
-		ResultActions response = mockMvc.perform(get("/api/employees/{id}", employeeId));
+		ResultActions response = mockMvc.perform(get("/api/employees/{id}", employee.getId()));
 
 		// then - verify the input
 
@@ -88,16 +94,17 @@ public class EmployeeControllerTest {
 				.andExpect(jsonPath("$.lastName", is(employee.getLastName())))
 				.andExpect(jsonPath("$.email", is(employee.getEmail())));
 	}
-
+	
 	@Test
 	public void givenInvalidEmployeeId_whenGetEmployeeById_thenReturnEmpty() throws Exception {
 		
-		long employeeId = 1L;
-		given(employeeService.getEmployeeById(employeeId)).willReturn(Optional.empty());
+		Employee employee = Employee.builder().firstName("Gabriel").lastName("Flamenbaum")
+				.email("gflamen@mailnator.com").build();
+		employeeRepository.save(employee);
 
 		// when - action or the behavior that we are going to test
 
-		ResultActions response = mockMvc.perform(get("/api/employees/{id}", employeeId));
+		ResultActions response = mockMvc.perform(get("/api/employees/{id}", 1));
 
 		// then - verify the input
 
@@ -107,19 +114,17 @@ public class EmployeeControllerTest {
 	@Test
 	public void givenUpdatedEmployee_whenUpdateEmployee_thenReturnUpdatedEmployeeObject() throws Exception {
 		// given - precondition or setup
-		long employeeId = 1L;
 
-		Employee savedEmployee = Employee.builder().id(1L).firstName("Gabriel").lastName("Flamenbaum")
+		Employee savedEmployee = Employee.builder().firstName("Gabriel").lastName("Flamenbaum")
 				.email("gflamen@mailnator.com").build();
 		
 		Employee updatedEmployee = Employee.builder().firstName("Julia").lastName("Prates")
 				.email("jup@mailnator.com").build();
 		
-		given(employeeService.getEmployeeById(employeeId)).willReturn(Optional.of(savedEmployee));
-		given(employeeService.updateEmployee(any(Employee.class))).willAnswer((invocation) -> invocation.getArgument(0));
+		employeeRepository.save(savedEmployee);
 
 		// when - action or the behavior that we are going to test
-		ResultActions response = mockMvc.perform(put("/api/employees/{id}", employeeId)
+		ResultActions response = mockMvc.perform(put("/api/employees/{id}", savedEmployee.getId())
 													.contentType(MediaType.APPLICATION_JSON)
 													.content(objectMapper.writeValueAsString(updatedEmployee)));
 
@@ -135,17 +140,18 @@ public class EmployeeControllerTest {
 	@Test
 	public void givenUpdatedEmployee_whenUpdateEmployee_thenReturnReturn404() throws Exception {
 		// given - precondition or setup
-		long employeeId = 1L;
-
+		
+		Employee savedEmployee = Employee.builder().id(1L).firstName("Gabriel").lastName("Flamenbaum")
+				.email("gflamen@mailnator.com").build();
 		
 		Employee updatedEmployee = Employee.builder().firstName("Julia").lastName("Prates")
 				.email("jup@mailnator.com").build();
 		
-		given(employeeService.getEmployeeById(employeeId)).willReturn(Optional.empty());
-		given(employeeService.updateEmployee(any(Employee.class))).willAnswer((invocation) -> invocation.getArgument(0));
+		employeeRepository.save(savedEmployee);
+		
 
 		// when - action or the behavior that we are going to test
-		ResultActions response = mockMvc.perform(put("/api/employees/{id}", employeeId)
+		ResultActions response = mockMvc.perform(put("/api/employees/{id}", 1)
 													.contentType(MediaType.APPLICATION_JSON)
 													.content(objectMapper.writeValueAsString(updatedEmployee)));
 
@@ -158,11 +164,14 @@ public class EmployeeControllerTest {
 	@Test
 	public void givenEmployeeId_whenDeleteEmployee_thenReturn200() throws Exception {
 		// given - precondition or setup
-		long employeeId = 1L;
+
+		Employee savedEmployee = Employee.builder().firstName("Gabriel").lastName("Flamenbaum")
+				.email("gflamen@mailnator.com").build();
 		
-		willDoNothing().given(employeeService).deleteEmployee(employeeId);
+		employeeRepository.save(savedEmployee);
+		
 		// when - action or the behavior that we are going to test
-		ResultActions response = mockMvc.perform(delete("/api/employees/{id}", employeeId));
+		ResultActions response = mockMvc.perform(delete("/api/employees/{id}", savedEmployee.getId()));
 		
 		// then - verify the input
 		
