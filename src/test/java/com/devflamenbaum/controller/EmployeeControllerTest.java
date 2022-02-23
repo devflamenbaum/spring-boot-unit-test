@@ -15,6 +15,9 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.hamcrest.CoreMatchers;
 
 import com.devflamenbaum.model.Employee;
@@ -55,5 +58,23 @@ public class EmployeeControllerTest {
 				.andExpect(MockMvcResultMatchers.jsonPath("$.lastName", CoreMatchers.is(employee.getLastName())))
 				.andExpect(MockMvcResultMatchers.jsonPath("$.email", CoreMatchers.is(employee.getEmail())))
 				.andDo(MockMvcResultHandlers.print());
+	}
+	
+	@Test
+	public void givenListOfEmployees_whenGetAllEmployees_thenReturnEmployeesList() throws Exception {
+		// given - precondition or setup
+		
+		List<Employee> listOfEmployees = new ArrayList<>();
+		listOfEmployees.add(Employee.builder().firstName("Gabriel").lastName("Flamenbaum").email("gflamen@mailnator").build());
+		listOfEmployees.add(Employee.builder().firstName("Tony").lastName("Stark").email("tony@mailnator").build());
+		given(employeeService.getAllEmployees()).willReturn(listOfEmployees);
+		// when - action or the behavior that we are going to test
+		
+		ResultActions response = mockMvc.perform(get("/api/employees"));
+		// then - verify the input
+		
+		response.andExpect(MockMvcResultMatchers.status().isOk())
+				.andDo(MockMvcResultHandlers.print())
+				.andExpect(MockMvcResultMatchers.jsonPath("$.size()", CoreMatchers.is(listOfEmployees.size())));
 	}
 }
